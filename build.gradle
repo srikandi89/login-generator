@@ -1,0 +1,72 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    apply from: 'version.gradle'
+
+    repositories {
+        google()
+        jcenter()
+        maven {
+            url maven_repo_read_url
+        }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradle_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'org.ajoberstar:grgit:1.7.2'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven { url "https://jitpack.io" }
+        maven {
+            url maven_repo_read_url
+        }
+
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Credentials
+
+def grgit = Grgit
+
+def username = "<git@username>"
+def password = "<git@password>"
+
+def modules = [ 
+    "app":"https://github.com/srikandi89/app-example.git",
+    "feature-login":"https://github.com/srikandi89/feature-login.git"
+]
+
+task cloneModules {
+    doLast {
+        modules.each { module ->
+            println "Cloning $module.value ..."
+            grgit.clone(dir: "$rootDir/$module.key", uri: module.value, credentials: new Credentials(username, password))
+        }
+    }
+}
+
+task assembleModules {
+    doLast {
+        def file = new File("$rootDir/settings.gradle")
+
+        def strModules = ""
+
+        modules.each { module ->
+            strModules += "':"+module.key+"',"
+        }
+
+        file.text = "include "+strModules.take(strModules.length()-1)+"\nrootProject.name='Multi Repo'"
+    }
+}
